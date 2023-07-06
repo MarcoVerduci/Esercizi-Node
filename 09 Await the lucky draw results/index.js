@@ -1,17 +1,28 @@
-async function getResults() {
-    try {
-        const results = await Promise.all([
-            luckyDraw('Tina'),
-            luckyDraw('Jorge'),
-            luckyDraw('Julien')
-        ]);
+function luckyDraw(player) {
+    return new Promise((resolve, reject) => {
+        const win = Boolean(Math.round(Math.random()));
 
-        for (const result of results) {
-            console.log(result);
-        }
-    } catch (error) {
-        console.error(error);
-    }
+        process.nextTick(() => {
+            if (win) {
+                resolve(`${player} won a prize in the draw!`);
+            } else {
+                reject(new Error(`${player} lost the draw.`));
+            }
+        });
+    });
 }
 
-getResults();
+async function getResults() {
+    try {
+        const tina = await luckyDraw("Tina");
+        console.log(tina)
+        const jorge = await luckyDraw("Jorge");
+        console.log(jorge)
+        const julien = await luckyDraw("Julien");
+        console.log(julien)
+
+    } catch (error) {
+        console.log(error)
+    }
+}
+getResults()
