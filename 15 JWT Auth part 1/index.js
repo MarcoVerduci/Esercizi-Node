@@ -1,40 +1,43 @@
 const express = require('express');
 const passport = require('passport');
-const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
+const passportJWT = require('passport-jwt');
+const { Strategy, ExtractJwt } = passportJWT;
 const dotenv = require('dotenv');
-const pgp = require('pg-promise')();
+const pg = require('pg');
 
 dotenv.config();
 
-const dbConfig = {
-    host: 'localhost',
-    port: 5432,
-    database: 'your_database_name',
-    user: 'your_username',
-    password: 'your_password'
-};
-
-const db = pgp(dbConfig);
+const pool = new pg.Pool();
 
 const jwtOptions = {
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-    secretOrKey: process.env.SECRET
+  secretOrKey: process.env.SECRET,
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken()
 };
 
-passport.use(
-    new JwtStrategy(jwtOptions, async (payload, done) => {
-        try {
-            const user = await db.oneOrNone('SELECT * FROM users WHERE id = $1', payload.sub);
-            if (user) {
-                return done(null, user);
-            }
-            return done(null, false);
-        } catch (error) {
-            return done(error, false);
-        }
-    })
-);
+const strategy = new Strategy(jwtOptions, (payload, done) => {
+  const { id } = payload;
+  pool.query('SELECT * FROM users WHERE id = $1', [id], (err, result) => {
+    if (err) {
+      return done(err, false);
+    }
+
+    const user = result.rows[0];
+
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  });
+});
+
+passport.use(strategy);
 
 const app = express();
-app.use(express.json());
+
 app.use(passport.initialize());
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
