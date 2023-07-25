@@ -1,61 +1,86 @@
-const planets = [
-    { id: 1, name: 'Mercury' },
-    { id: 2, name: 'Venus' },
-    { id: 3, name: 'Earth' },
-];
+const Joi = require('joi');
 
-exports.getAll = (req, res) => {
-    res.json(planets);
+const Planet = {
+    id: Joi.number().required(),
+    name: Joi.string().required(),
 };
 
-exports.getOneById = (req, res) => {
-    const planet = planets.find((p) => p.id === parseInt(req.params.id));
+let planets = [
+    {
+        id: 1,
+        name: 'Earth',
+    },
+    {
+        id: 2,
+        name: 'Mars',
+    },
+];
+
+function getPlanets(req, res) {
+    res.json(planets);
+}
+
+function getPlanetById(req, res) {
+    const planetId = parseInt(req.params.id);
+    const planet = planets.find((p) => p.id === planetId);
+
     if (!planet) {
         return res.status(404).json({ error: 'Planet not found' });
     }
+
     res.json(planet);
-};
+}
 
-exports.create = (req, res) => {
-    const { name } = req.body;
-    if (!name) {
-        return res.status(400).json({ error: 'Name is required' });
+function createPlanet(req, res) {
+    const { error } = Planet.validate(req.body);
+
+    if (error) {
+        return res.status(400).json({ error: error.details[0].message });
     }
 
-    const planet = {
-        id: planets.length + 1,
-        name,
+    const newPlanet = {
+        id: req.body.id,
+        name: req.body.name,
     };
-    planets.push(planet);
 
+    planets.push(newPlanet);
     res.status(201).json({ msg: 'Planet created successfully' });
-};
+}
 
-exports.updateById = (req, res) => {
+function updatePlanet(req, res) {
     const planetId = parseInt(req.params.id);
-    const { name } = req.body;
-    if (!name) {
-        return res.status(400).json({ error: 'Name is required' });
-    }
+    const planet = planets.find((p) => p.id === planetId);
 
-    const planetIndex = planets.findIndex((p) => p.id === planetId);
-    if (planetIndex === -1) {
+    if (!planet) {
         return res.status(404).json({ error: 'Planet not found' });
     }
 
-    planets[planetIndex] = { id: planetId, name };
+    const { error } = Planet.validate(req.body);
 
+    if (error) {
+        return res.status(400).json({ error: error.details[0].message });
+    }
+
+    planet.name = req.body.name;
     res.json({ msg: 'Planet updated successfully' });
-};
+}
 
-exports.deleteById = (req, res) => {
+function deletePlanet(req, res) {
     const planetId = parseInt(req.params.id);
-    const planetIndex = planets.findIndex((p) => p.id === planetId);
-    if (planetIndex === -1) {
+    const index = planets.findIndex((p) => p.id === planetId);
+
+    if (index === -1) {
         return res.status(404).json({ error: 'Planet not found' });
     }
 
-    planets.splice(planetIndex, 1);
-
+    planets.splice(index, 1);
     res.json({ msg: 'Planet deleted successfully' });
+}
+
+module.exports = {
+    getPlanets,
+    getPlanetById,
+    createPlanet,
+    updatePlanet,
+    deletePlanet,
 };
