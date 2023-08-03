@@ -37,6 +37,23 @@ const app = express();
 
 app.use(passport.initialize());
 
+const createTableQuery = `
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
+  )
+`;
+
+pool.query(createTableQuery, (err, result) => {
+  if (err) {
+    console.error('Errore durante la creazione della tabella:', err);
+  } else {
+    console.log('Tabella "users" creata con successo!');
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
